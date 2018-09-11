@@ -6,10 +6,11 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <boost/filesystem.hpp>
-#include <cryptopp/filters.h>
-#include <cryptopp/files.h>
-#include <cryptopp/hex.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/adler32.h>
+#include <cryptopp/crc.h>
+#include <cryptopp/md5.h>
+#include <cryptopp/sha.h>
 
 #include "utils.hpp"
 #include "worker.hpp"
@@ -41,23 +42,29 @@ inline string_set operator&(const string_set& lhs, const string_set& rhs){
     return intersection;
 }
 
-Worker::Worker(const checksum_ptr instance) : checksumInstance(instance) {}
-
-void Worker::populateSetWithKeys(std::unordered_set<std::string>& set, scan_result& result){
-    for(auto& entry : result){
-        set.insert(entry.second->filepath);
+Worker::Worker(std::string checksumName){
+    // Not very elegant, but simple
+    if(checksumName == "md5"){
+        this->hashFileImplementation = HashFile<CryptoPP::Weak::MD5>;
+    }
+    else if(checksumName == "crc32"){
+        this->hashFileImplementation = HashFile<CryptoPP::CRC32>;
+    }
+    else if(checksumName == "adler32"){
+        this->hashFileImplementation = HashFile<CryptoPP::Adler32>;
+    }
+    else if(checksumName == "sha1"){
+        this->hashFileImplementation = HashFile<CryptoPP::SHA1>;
+    }
+    else if(checksumName == "sha256"){
+        this->hashFileImplementation = HashFile<CryptoPP::SHA256>;
     }
 }
 
-std::string Worker::hashFile(std::string filepath){
-    using namespace CryptoPP;
-
-    CryptoPP::HashTransformation* checksum = (CryptoPP::HashTransformation*)this->checksumInstance->Clone();
-    std::string digest;
-    FileSource fileSource(filepath.c_str(), true, new HashFilter(*checksum, new HexEncoder(new StringSink(digest))));
-    delete checksum;
-
-    return digest;
+void Worker::populateSetWithKeys(std::unordered_set<std::string>& set, scan_result& result){
+    for(const auto& entry : result){
+        set.insert(entry.second.filepath);
+    }
 }
 
 // Internal implementation of Scan Directory
@@ -76,15 +83,12 @@ scan_result Worker::scanDirectoryInternal(std::string path){
         if(! fs::is_directory(filepathInfo)){
             // Build a new result with a path that does NOT include the original path being scanned
             std::string shortenedPath = filepath.substr(cutIndex, filepath.length() - cutIndex);
-            auto result = std::shared_ptr<FileResult>(
-                new FileResult(
-                    shortenedPath,
-                    this->hashFile(filepath),
-                    fs::file_size(filepathInfo),
-                    fs::last_write_time(filepathInfo)
-                ));
-            
-            retVal[shortenedPath] = result;
+            retVal[shortenedPath] = FileResult(
+                shortenedPath,
+                this->hashFileImplementation(filepath),
+                fs::file_size(filepathInfo),
+                fs::last_write_time(filepathInfo)
+            );
         }
         
         ++dirWalker;
@@ -142,8 +146,8 @@ void Worker::Reconcile(scan_result& resultA, scan_result& resultB, bool keepResu
             continue;
         }
 
-        FileResult& entryInfoA = *resultA[*entryA];
-        FileResult& entryInfoB = *resultB[*entryB];
+        FileResult& entryInfoA = resultA[*entryA];
+        FileResult& entryInfoB = resultB[*entryB];
 
         if(entryInfoA == entryInfoB){
             unchangedPaths.insert(entry);
@@ -170,7 +174,7 @@ void Worker::Reconcile(scan_result& resultA, scan_result& resultB, bool keepResu
 
 // Write an individual patch result
 std::stringstream Worker::WritePatchResult(std::string directory, patch_result_ptr result, bool ignoreUnchanged = false){
-    typedef std::pair<char, FileResultPtr> line;
+    typedef std::pair<char, FileResult> line;
     std::stringstream output;
     
     // Flatten the initial structure
@@ -191,14 +195,14 @@ std::stringstream Worker::WritePatchResult(std::string directory, patch_result_p
     // Sort it by the filepath
     auto sorter = [](const line& a, const line& b) -> bool 
     {
-        return a.second->filepath < b.second->filepath;
+        return a.second.filepath < b.second.filepath;
     };
     std::sort(lines.begin(), lines.end(), sorter);
 
     // Write out the lines
     output << directory << std::endl;
-    for(const line& entry: lines){
-        output << entry.first << " " << entry.second->toString() << std::endl;
+    for(line& entry: lines){
+        output << entry.first << " " << entry.second.toString() << std::endl;
     }
 
     return output;

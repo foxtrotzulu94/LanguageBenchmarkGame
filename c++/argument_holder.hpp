@@ -15,7 +15,7 @@ struct ArgumentHolder{
 
     fs::path DirectoryB;
 
-    checksum_ptr Checksum;
+    std::string ChecksumName;
 
     bool ShouldIgnoreUnchanged;
 
@@ -24,7 +24,4 @@ struct ArgumentHolder{
     // Parse the arguments given
     bool Parse(int argc, char** argv);
     bool Parse(std::vector<std::string>& );
-
-private:
-    void setHash(std::string hashName);
 };

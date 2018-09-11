@@ -31,9 +31,9 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    Worker work(args.Checksum);
+    Worker work(args.ChecksumName);
     std::cout << "Starting diff of "<< args.DirectoryA << " and " << args.DirectoryB << " ("
-        << args.Checksum->AlgorithmName() << ")" << std::endl;
+        << args.ChecksumName << ")" << std::endl;
     std::cout << "Start time " << GetFormattedDateTime() << std::endl;
 
     auto promiseA = work.scanDirectory(args.DirectoryA.string());

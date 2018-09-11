@@ -34,8 +34,8 @@ namespace std
 }
 
 // Short-hand for worker results
-typedef std::unordered_map<std::string, FileResultPtr> scan_result;
-typedef std::unordered_map<ReconcileOperation, std::vector<FileResultPtr>> patch_result;
+typedef std::unordered_map<std::string, FileResult> scan_result;
+typedef std::unordered_map<ReconcileOperation, std::vector<FileResult>> patch_result;
 typedef std::shared_ptr<patch_result> patch_result_ptr;
 typedef std::pair<patch_result_ptr, patch_result_ptr> reconcile_result;
 
@@ -46,8 +46,8 @@ namespace fs = boost::filesystem;
 
 class Worker{
 private:
-    // An instance of the checksum function to use
-    const checksum_ptr checksumInstance;
+    // pointer to the function
+    std::string (*hashFileImplementation)(std::string);
 
     // Result of the last reconcile operation if it was saved
     std::shared_ptr<reconcile_result> lastReconcile;
@@ -71,7 +71,7 @@ private:
 
 public:
     // ctor w/ checksum object instance
-    Worker(const checksum_ptr instance);
+    Worker(std::string checksumName);
 
     // Asynchronously run scanDirectory
     std::future<scan_result> scanDirectory(std::string path);
