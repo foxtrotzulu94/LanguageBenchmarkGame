@@ -234,7 +234,7 @@ def __plot(args, use_mean = False):
 #end __plot
 
 def plot(args):
-    import pygal
+    import pygal, datetime
 
     benchmark_results = __plot(args, use_mean= True)
 
@@ -242,13 +242,26 @@ def plot(args):
     bar_chart.title = 'Language benchmark results (in seconds, lower is better)'
     [bar_chart.add(x[0], x[1]) for x in benchmark_results]
 
-    print("Opening table in web browser...")
-    bar_chart.render_in_browser()
+    try:
+        print("Opening table in web browser...")
+        bar_chart.render_in_browser()
+    except Exception as e:
+        print("Could not render in browser!")
+        print(e)
+
+    try:
+        print("Saving locally...")
+        timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
+        bar_chart.render_to_png("{}-Results.png".format(timestamp))
+    except Exception as e:
+        print("Unable to save locally")
+        print(e)
+
     print("Done")
 #end plot
 
 def boxplot(args):
-    import pygal
+    import pygal, datetime
 
     benchmark_results = __plot(args, use_mean= False)
 
@@ -256,13 +269,26 @@ def boxplot(args):
     box_plot.title = 'Language benchmark results'
     [box_plot.add(lang, results) for lang,results in benchmark_results]
 
-    print("Opening table in web browser...")
-    box_plot.render_in_browser()
+    try:
+        print("Opening table in web browser...")
+        box_plot.render_in_browser()
+    except Exception as e:
+        print("Could not render in browser!")
+        print(e)
+
+    try:
+        print("Saving locally...")
+        timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
+        box_plot.render_to_png("{}-Results.png".format(timestamp))
+    except Exception as e:
+        print("Unable to save locally")
+        print(e)
+
     print("Done")
 #end plot
 
 def table(args):
-    import pygal, webbrowser
+    import pygal, webbrowser, datetime
 
     # remove any "--" args since we want to inject our own
     removable_args = [flag for flag in args if flag.startswith('--')]
@@ -284,7 +310,8 @@ def table(args):
     [chart.add(lang, [results[sample][lang] for sample in checksums]) for lang in languages]
 
     chart.value_formatter = lambda x: '%.3f s' % x if x is not None else 'N/A'
-    result_file_name = 'results.html'
+    timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
+    result_file_name = '{}-Results.html'.format(timestamp)
     result_table = chart.render_table(style=True, transpose=True)
     if result_table is not None:
         with open(result_file_name, 'w') as output:
