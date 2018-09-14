@@ -32,6 +32,8 @@ def run(cmd_args):
 if __name__=="__main__":
     import sys, os
 
-    if sys.argv[0] == __file__:
+    setup()
+    build()
+    if os.path.basename(sys.argv[0]) == os.path.basename(__file__):
         run(sys.argv[1:])
 # end main
