@@ -4,18 +4,21 @@ extern crate clap;
 extern crate chrono;
 
 mod argument_holder;
-mod scan_util;
+mod file_result;
+mod results;
 mod util;
 
 use argument_holder::ArgumentHolder as ArgHolder;
-use scan_util::*;
+use file_result::*;
+use results::*;
 use clap::{Arg, App, ArgGroup};
 use crypto::digest::Digest;
 
-use std::io::Read;
+use std::io::{Read, Write};
+use std::iter::*;
 use std::fs;
-use std::fs::File;
-use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::collections::{HashMap, HashSet};
 use std::thread;
 use std::path::{Path,PathBuf};
 
@@ -50,8 +53,8 @@ fn setup_arguments() -> ArgHolder {
 
 fn hash_file(filepath: &PathBuf, mut checksum: Box<Digest>) -> String {
     let mut file = File::open(filepath).unwrap();
-    const block_size: usize = 64 * 1024;// 4KB blocks
-    let mut buffer: [u8; block_size] = [0; block_size];
+    const BLOCK_SIZE: usize = 64 * 1024;// 4KB blocks
+    let mut buffer: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
     
     // Read the file by chunks until there's no more to read
     while let Ok(read_amount) = file.read(&mut buffer) {
@@ -74,9 +77,6 @@ fn scan_directory(directory_path: &Path, checksum_generator: impl Fn() -> Box<Di
         let mut visit_file = |some_entry : &fs::DirEntry| {
             let file_info = some_entry.metadata().unwrap();
             let canonical_name : String = some_entry.path().to_str().unwrap().chars().skip(cut_index).collect();
-            
-            // let hash_val = ;
-            // println!("{} - {}", canonical_name, hash_val);
 
             file_results.insert(
                 canonical_name.clone(), 
@@ -97,17 +97,88 @@ fn scan_directory(directory_path: &Path, checksum_generator: impl Fn() -> Box<Di
     return file_results;
 }
 
-fn reconcile(resultsA: ScanDirectoryResult, resultsB : ScanDirectoryResult) -> ReconcileResult{
-    //TODO
-    return (HashMap::new(), HashMap::new());
+fn reconcile(results_a: ScanDirectoryResult, results_b : ScanDirectoryResult) -> ReconcileResult{
+    let paths_a : HashSet<String> = HashSet::from_iter(results_a.keys().cloned());
+    let paths_b : HashSet<String> = HashSet::from_iter(results_b.keys().cloned());
+
+    let suspected_conflicts : HashSet<String> = paths_a.intersection(&paths_b).map(|x| x.clone()).collect();
+    let suspected_conflicts_iter = suspected_conflicts.iter();
+
+    let unchanged_paths : HashSet<String> = HashSet::from_iter(
+        suspected_conflicts_iter
+            .filter(|entry| results_a.get(*entry).unwrap() == results_b.get(*entry).unwrap()).cloned()
+    );
+    let conflicts : HashSet<String> = suspected_conflicts.difference(&unchanged_paths).map(|path| path.clone()).collect();
+
+    // First do dir_a
+    let mut patch_info_a = PatchResult::new();
+    patch_info_a.insert(
+        ReconcileOperation::Add, 
+        paths_b.difference(&paths_a).map(|path| results_b.get(path).unwrap().clone()).collect()
+    );
+    patch_info_a.insert(
+        ReconcileOperation::Unchanged, 
+        unchanged_paths.clone().into_iter().map(|path| results_a.get(&path).unwrap().clone()).collect()
+    );
+    patch_info_a.insert(
+        ReconcileOperation::Conflict, 
+        conflicts.clone().into_iter().map(|path| results_a.get(&path).unwrap().clone()).collect()
+    );
+
+    // Then do dir_b
+    let mut patch_info_b = PatchResult::new();
+    patch_info_b.insert(
+        ReconcileOperation::Add, 
+        paths_a.difference(&paths_b).map(|path| results_a.get(path).unwrap().clone()).collect()
+    );
+    patch_info_b.insert(
+        ReconcileOperation::Unchanged, 
+        unchanged_paths.clone().into_iter().map(|path| results_b.get(&path).unwrap().clone()).collect()
+    );
+    patch_info_b.insert(
+        ReconcileOperation::Conflict, 
+        conflicts.clone().into_iter().map(|path| results_b.get(&path).unwrap().clone()).collect()
+    );
+
+    // Return the tuple corresponding to a Reconcile Result
+    return (patch_info_a, patch_info_b);
 }
 
 fn write_results(changes: ReconcileResult, args: ArgHolder){
-    //TODO
+    let mut out_file = OpenOptions::new().write(true).open("reference.patch").unwrap();
+
+    // All the write methods have an "unwrap" at the end to check the Result of the operation
+    // If any of the writes fails, the program panics and exits
+
+    out_file.write_fmt(format_args!("# Results for {}\n", chrono::Local::now())).unwrap();
+    out_file.write_fmt(format_args!("# Reconciled '{0}' '{1}'\n", args.directory_a.to_str().unwrap(), args.directory_b.to_str().unwrap())).unwrap();
+    write_patch_results(args.directory_a, changes.0, &out_file, args.ignore_unchanged);
+    out_file.write_fmt(format_args!("\n")).unwrap();
+    write_patch_results(args.directory_b, changes.1, &out_file, args.ignore_unchanged);
+    out_file.write_fmt(format_args!("\n")).unwrap();
 }
 
-fn write_patch_results(directory: String, ) -> Vec<String>{
-    return vec![];
+fn write_patch_results(directory: PathBuf, patch : PatchResult, mut out_file : &File, ignore_unchanged: bool){
+    out_file.write_fmt(format_args!("{}\n",directory.to_str().unwrap())).unwrap();
+    
+    let mut lines : Vec<Line> = Vec::new();
+    // Linearize the result
+    for action in patch{
+        let operation = action.0;
+        if ignore_unchanged && operation == ReconcileOperation::Unchanged{
+            continue;
+        }
+
+        for path in action.1{
+            lines.push((operation, path));
+        }
+    }
+
+    // Sort and append to out_file
+    lines.sort_unstable_by(|x, y| x.1.filepath.cmp(&y.1.filepath));
+    for line in lines{
+        out_file.write_fmt(format_args!("{} {}\n", line.0, line.1)).unwrap();
+    }
 }
 
 fn main() {
@@ -132,7 +203,7 @@ fn main() {
         patch_result = reconcile(scan_a.join().unwrap(), scan_b.join().unwrap());
     }
     
+    // Write the results
     write_results(patch_result, arg_holder);
-
     println!("Finished at {}", chrono::Local::now());
 }

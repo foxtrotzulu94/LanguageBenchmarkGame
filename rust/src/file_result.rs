@@ -1,16 +1,17 @@
-use std::collections::HashMap;
 use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Ord, PartialOrd, Clone)]
 pub struct FileResult{
     pub filepath:       String,
     pub hash:           String,
     pub size:           u64,
     pub time_modified:  SystemTime,
 }
+
+impl Eq for FileResult {}
 
 impl PartialEq for FileResult {
     fn eq(&self, other: &FileResult) -> bool {
@@ -31,7 +32,3 @@ impl fmt::Display for FileResult {
             self.size));
     }
 }
-
-pub type ScanDirectoryResult = HashMap<String, FileResult>;
-pub type PatchResult = HashMap<String, Vec<FileResult>>;
-pub type ReconcileResult = (PatchResult, PatchResult);
