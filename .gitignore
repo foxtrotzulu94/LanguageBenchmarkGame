@@ -7,5 +7,6 @@
 *.dll
 */obj/*
 */bin/*
+*/build/*
 *-Results.*
 rust/target
