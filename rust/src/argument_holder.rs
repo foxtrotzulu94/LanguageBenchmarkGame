@@ -1,27 +1,35 @@
 use clap::ArgMatches;
+use crypto::digest::Digest;
+use crypto::md5::Md5;
+use crypto::sha1::Sha1;
+use crypto::sha2::Sha256;
+
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct ArgumentHolder{
-    pub directory_a: String,
-    pub directory_b: String,
+    pub directory_a: PathBuf,
+    pub directory_b: PathBuf,
     pub ignore_unchanged: bool,
     pub hash_name: String,
 }
 
 impl Default for ArgumentHolder {
     fn default () -> ArgumentHolder {
-        ArgumentHolder{directory_a: "".to_string(),
-            directory_b: "".to_string(),
+        ArgumentHolder{
+            directory_a: PathBuf::new(),
+            directory_b: PathBuf::new(),
             ignore_unchanged: false,
-            hash_name: "md5".to_string()}
+            hash_name: "md5".to_string()
+        }
     }
 }
 
 impl ArgumentHolder{
     pub fn from_args (args: ArgMatches) -> ArgumentHolder {
         ArgumentHolder{
-            directory_a: args.value_of("DirectoryA").unwrap().to_string(),
-            directory_b: args.value_of("DirectoryB").unwrap().to_string(),
+            directory_a: Path::new(args.value_of("DirectoryA").unwrap()).canonicalize().unwrap(),
+            directory_b: Path::new(args.value_of("DirectoryB").unwrap()).canonicalize().unwrap(),
             ignore_unchanged: match args.value_of("ignore-unchanged"){
                 Some(_) => true,
                 None => false,
@@ -47,5 +55,20 @@ impl ArgumentHolder{
                     "md5".to_string()
                 }
         }
+    }
+
+    fn get_checksum(checksum_name : &str) -> Box<Digest>{
+        return match checksum_name {
+            "sha1" => Box::new(Sha1::new()),
+            "sha256" => Box::new(Sha256::new()),
+            "adler32" => panic!("adler32 not implemented"),
+            "crc32" => panic!("crc32 not implemented"),
+            "md5" | _ => Box::new(Md5::new())
+        }
+    }
+
+    pub fn get_checksum_generator(&self) -> impl Fn() -> Box<Digest>{
+        let checksum_name = self.hash_name.clone();
+        return move || ArgumentHolder::get_checksum(checksum_name.as_str());
     }
 }

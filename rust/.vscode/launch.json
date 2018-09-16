@@ -14,7 +14,7 @@
                     "--bin=rust"
                 ]
             },
-            "args": ["a","b", "--sha1"],
+            "args": ["/media/DMZ/Queue/Articles", "/media/DMZ-1/Queue/Articles/", "--sha1"],
             "cwd": "${workspaceFolder}",
             "sourceLanguages": ["rust"]
         },
