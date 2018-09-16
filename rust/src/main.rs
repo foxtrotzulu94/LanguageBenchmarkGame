@@ -145,7 +145,12 @@ fn reconcile(results_a: ScanDirectoryResult, results_b : ScanDirectoryResult) ->
 }
 
 fn write_results(changes: ReconcileResult, args: ArgHolder){
-    let mut out_file = OpenOptions::new().write(true).open("reference.patch").unwrap();
+    let out_file_t = OpenOptions::new().write(true).create(true).open("reference.patch");
+    let mut out_file : File;
+    match out_file_t{
+        Ok(file) => out_file = file,
+        Err(e) => { println!("{}", e); panic!(e) },
+    };
 
     // All the write methods have an "unwrap" at the end to check the Result of the operation
     // If any of the writes fails, the program panics and exits
