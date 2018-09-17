@@ -223,7 +223,7 @@ def __plot(args, use_mean = False):
 
     ordered_results = []
     avg = lambda collection: sum(collection)/len(collection)
-    key_func = lambda x : avg(x[1])
+    key_func = lambda x : avg(x[1]) if isinstance(x[1],(float, int)) else 0
     
     if use_mean:
         # We want avg to be a no-op since it is already averaged
