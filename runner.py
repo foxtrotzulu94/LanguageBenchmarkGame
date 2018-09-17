@@ -309,6 +309,10 @@ def table(args):
     chart.x_labels = checksums
 
     # for every language, insert a list into the chart with the values of each checksum
+    if len(languages) == 1 and languages[0] == 'all':
+        dir_names = [x for x in os.listdir('.') if os.path.isdir(x) and os.path.exists(os.path.join('.',x,'run.py'))]
+        languages = dir_names
+        print("Selected by wildcard: {}".format(languages))
     [chart.add(lang, [results[sample][lang] for sample in checksums]) for lang in languages]
 
     chart.value_formatter = lambda x: '%.3f s' % x if x is not None else 'N/A'
