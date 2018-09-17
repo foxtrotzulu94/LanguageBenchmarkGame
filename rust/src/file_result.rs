@@ -17,7 +17,10 @@ impl PartialEq for FileResult {
     fn eq(&self, other: &FileResult) -> bool {
         self.hash == other.hash
         && self.size == other.size
-        && self.time_modified.duration_since(other.time_modified).unwrap().as_secs() < 1
+        && (
+            self.time_modified.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64
+            - other.time_modified.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64
+            ).abs() < 1
         && self.filepath == other.filepath
     }
 }
@@ -25,7 +28,6 @@ impl PartialEq for FileResult {
 impl fmt::Display for FileResult {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let epochtime = self.time_modified.duration_since(UNIX_EPOCH).unwrap().as_secs();
-
         return fmt.write_str(&format!("{} ({} | {} bytes)", 
             self.filepath, 
             Local.timestamp(epochtime as i64, 0).format("%Y-%m-%d %H:%M:%S").to_string(), 

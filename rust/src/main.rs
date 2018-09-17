@@ -84,7 +84,13 @@ fn scan_directory(directory_path: &Path, checksum_generator: impl Fn() -> Box<Di
                     filepath: canonical_name,
                     hash: hash_file(&some_entry.path(), checksum_generator()),
                     size: file_info.len(),
-                    time_modified: file_info.modified().unwrap()
+                    time_modified: match file_info.modified(){
+                        Ok(time) => time,
+                        Err(e) => {
+                            println!("Error reading mod_time for file {}", some_entry.path().to_str().unwrap());
+                            panic!(e)
+                        }
+                    }
             });
         };
 
@@ -145,12 +151,9 @@ fn reconcile(results_a: ScanDirectoryResult, results_b : ScanDirectoryResult) ->
 }
 
 fn write_results(changes: ReconcileResult, args: ArgHolder){
-    let out_file_t = OpenOptions::new().write(true).create(true).open("reference.patch");
-    let mut out_file : File;
-    match out_file_t{
-        Ok(file) => out_file = file,
-        Err(e) => { println!("{}", e); panic!(e) },
-    };
+    let out_file_name = "reference.patch";
+    fs::remove_file(out_file_name).unwrap();
+    let mut out_file = OpenOptions::new().write(true).create_new(true).open(out_file_name).unwrap();
 
     // All the write methods have an "unwrap" at the end to check the Result of the operation
     // If any of the writes fails, the program panics and exits
