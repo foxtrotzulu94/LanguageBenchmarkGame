@@ -5,6 +5,14 @@
 
 import sys, os, inspect
 
+def __get_results_directory():
+    results_directory = "Results"
+    if not os.path.exists(results_directory):
+        os.mkdir(results_directory)
+
+    return results_directory
+#end 
+
 def help(args = None):    
     __name__ = "__main__"
     supported_operations = [name for name, obj in inspect.getmembers(sys.modules[__name__]) if inspect.isfunction(obj) and "__" not in name]
@@ -180,11 +188,15 @@ def benchmark(args, return_times = False):
     return average
 #end benchmark
 
+def __find_all_implementations():
+    return [x for x in os.listdir('.') if os.path.isdir(x) and os.path.exists(os.path.join('.',x,'run.py'))]
+#end find all
+
 def compare(args, return_time_list = False, print_results = True):
     working_dir = os.getcwd()
     dir_names = args[0].split(',')
     if len(dir_names) == 1 and dir_names[0] == 'all':
-        dir_names = [x for x in os.listdir('.') if os.path.isdir(x) and os.path.exists(os.path.join('.',x,'run.py'))]
+        dir_names = __find_all_implementations()
         print("Selected by wildcard: {}".format(dir_names))
 
     repetitions = args[1]
@@ -235,62 +247,175 @@ def __plot(args, use_mean = False):
     return ordered_results
 #end __plot
 
-def plot(args):
-    import pygal, datetime
+def __render_and_save(a_plot, data_dictionary):
+    import datetime, json
 
-    benchmark_results = __plot(args, use_mean= True)
+    timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
 
-    bar_chart = pygal.HorizontalBar()
-    bar_chart.title = 'Language benchmark results (in seconds, lower is better)'
-    [bar_chart.add(x[0], x[1]) for x in benchmark_results]
-
+    # Try saving the interactive file
     try:
-        print("Opening table in web browser...")
-        bar_chart.render_in_browser()
+        filename = "{}-Results-interactive.html".format(timestamp) 
+        a_plot.render_to_file(os.path.join(__get_results_directory(), filename))
     except Exception as e:
         print("Could not render in browser!")
         print(e)
 
+    # Try opening it in a web browser
+    try:
+        print("Opening table in web browser...")
+        a_plot.render_in_browser()
+    except Exception as e:
+        print("Could not render in browser!")
+        print(e)
+
+    # Try saving the png locally
     try:
         print("Saving locally...")
-        timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
-        bar_chart.render_to_png("{}-Results.png".format(timestamp))
+        filename = "{}-Results.png".format(timestamp)
+        a_plot.render_to_png(os.path.join(__get_results_directory(), filename))
     except Exception as e:
-        print("Unable to save locally")
+        print("Unable to save PNG chart")
         print(e)
+    
+    # Try saving a local copy as a table of values
+    try:
+        result_table = a_plot.render_table(style=True, transpose=True)
+        if result_table is not None:
+            filename ="{}-Results.html".format(timestamp) 
+            with open(os.path.join(__get_results_directory(), filename), 'w') as output:
+                output.write(result_table)
+    except Exception as e:
+        print("Unable to save table of results")
+        print(e)
+
+    # Last, make a json copy
+    try:        
+        filename = "{}-Results.json".format(timestamp) 
+        with open(os.path.join(__get_results_directory(), filename), 'w') as output:
+            json.dump(data_dictionary, output, sort_keys=True, indent=4, separators=(',', ': '))
+    except Exception as e:
+        print("Unable to save json data")
+        print(e)
+#end
+
+def __get_dir_size(dir_path):
+    import os
+
+    total_size = 0
+    total_files = 0
+
+    for directory, _, filenames in os.walk(dir_path):
+        for a_file in filenames:
+            filepath = os.path.join(directory, a_file)
+            total_files += 1
+            try:
+                total_size += os.path.getsize(filepath)
+            except:
+                pass
+    #end for
+
+    # return a tuple containing files at [0] and total size at [1]
+    return (total_files,total_size)
+#end 
+
+# Taken from https://stackoverflow.com/a/1094933
+def __sizeof_standard(num, suffix='B'):
+    for unit in ['','K','M','G','T','P','E','Z']:
+        if abs(num) < 1000.0:
+            return "%3.1f %s%s" % (num, unit, suffix)
+        num /= 1000.0
+    return "%.1f %s%s" % (num, 'Y', suffix)
+#end sizeof
+
+def __get_run_metadata(args, method=None):
+    # return the metadata of the run when using compare, plot and table commands
+
+    metadata = {}
+    metadata['languages'] = args[0]
+    metadata['repetitions'] = args[1]
+    metadata['directories'] = []
+    
+    # For the two directories
+    for a_dir in [args[2], args[3]]:
+        dir_metadata = {}
+        dir_metadata['name'] = a_dir
+        dir_stat = __get_dir_size(a_dir)
+        dir_metadata['size'] = __sizeof_standard(dir_stat[1])
+        dir_metadata['files'] = dir_stat[0]
+        metadata['directories'].append(dir_metadata)
+
+    # Log additional options
+    metadata['options'] = args[4:]
+
+    # if we were given the operation name, put that in
+    if method is not None:
+        metadata['operation'] = method
+    
+    return metadata
+#end 
+
+def __get_additional_title_info(args):
+    # retrieves the text to put between parens on the title
+    additional_text = "in seconds, lower is better"
+
+    try:
+        # check the number of repetitions
+        repetitions = int(args[1])
+        if repetitions == 1:
+            repetitions_text = "single repetition"
+        else:
+            repetitions_text = "{} repetitions".format(repetitions)
+
+        # Stat the two directories
+        dir_a, dir_b = args[2], args[3]
+        dir_a_stat = __get_dir_size(dir_a)
+        dir_b_stat = __get_dir_size(dir_b)
+
+        # sum up the contribution in size and files for both
+        total_files = dir_a_stat[0] + dir_b_stat[0]
+        total_size = dir_a_stat[1] + dir_b_stat[1]
+
+        # format and return
+        additional_text = "{}, {} files, {}".format(repetitions_text,total_files, __sizeof_standard(total_size))
+    finally:
+        return additional_text
+#end 
+
+def plot(args):
+    import pygal
+    
+    benchmark_results = __plot(args, use_mean= True)
+    bar_chart = pygal.HorizontalBar()
+    bar_chart.title = 'Language benchmark results\n({})'.format(__get_additional_title_info(args))
+
+    [bar_chart.add(x[0], x[1]) for x in benchmark_results]
+    result_data = { x[0]:x[1] for x in benchmark_results}
+    result_data['_metadata'] = __get_run_metadata(args, 'plot')
+
+    __render_and_save(bar_chart, result_data)
 
     print("Done")
 #end plot
 
 def boxplot(args):
-    import pygal, datetime
+    import pygal
 
     benchmark_results = __plot(args, use_mean= False)
 
     box_plot = pygal.Box()
-    box_plot.title = 'Language benchmark results'
+    box_plot.title = 'Language benchmark results\n({})'.format(__get_additional_title_info(args))
+
     [box_plot.add(lang, results) for lang,results in benchmark_results]
+    result_data = { lang:results for lang,results in benchmark_results}
+    result_data['_metadata'] = __get_run_metadata(args, 'boxplot')
 
-    try:
-        print("Opening table in web browser...")
-        box_plot.render_in_browser()
-    except Exception as e:
-        print("Could not render in browser!")
-        print(e)
-
-    try:
-        print("Saving locally...")
-        timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
-        box_plot.render_to_png("{}-Results.png".format(timestamp))
-    except Exception as e:
-        print("Unable to save locally")
-        print(e)
+    __render_and_save(box_plot, result_data)
 
     print("Done")
 #end plot
 
 def table(args):
-    import pygal, webbrowser, datetime
+    import pygal, webbrowser, datetime, json
 
     # remove any "--" args since we want to inject our own
     removable_args = [flag for flag in args if flag.startswith('--')]
@@ -305,29 +430,41 @@ def table(args):
         results[entry] = compare(args + ['--{}'.format(entry)], return_time_list = False, print_results= False)
     
     chart = pygal.Bar()
-    chart.title = 'Language benchmark results (in seconds, lower is better)'
+    chart.title = 'Language benchmark results\n({})'.format(__get_additional_title_info(args))
     chart.x_labels = checksums
 
     # for every language, insert a list into the chart with the values of each checksum
     if len(languages) == 1 and languages[0] == 'all':
-        dir_names = [x for x in os.listdir('.') if os.path.isdir(x) and os.path.exists(os.path.join('.',x,'run.py'))]
+        dir_names = __find_all_implementations()
         languages = dir_names
         print("Selected by wildcard: {}".format(languages))
+
     [chart.add(lang, [results[sample][lang] for sample in checksums]) for lang in languages]
 
     chart.value_formatter = lambda x: '%.3f s' % x if x is not None else 'N/A'
     timestamp = str(datetime.datetime.now().isoformat()).split('.')[0].replace(":","").replace("-","")
-    result_file_name = '{}-Results.html'.format(timestamp)
+
+    # Save the HTML Table
+    result_file_name = os.path.join(__get_results_directory(), '{}-Results.'.format(timestamp))
     result_table = chart.render_table(style=True, transpose=True)
     if result_table is not None:
-        with open(result_file_name, 'w') as output:
+        with open(result_file_name + 'html', 'w') as output:
             output.write(result_table)
 
+    # Save the JSON Data
+    data_dictionary = { lang:{ sample:results[sample][lang] for sample in checksums} for lang in languages }
+    data_dictionary['_metadata'] = __get_run_metadata(args, 'table')
+    with open(result_file_name + 'json', 'w') as output:
+        json.dump(data_dictionary, output, sort_keys=True, indent=4, separators=(',', ': '))
+
     print("Opening table in web browser...")
-    webbrowser.open("file://{}".format(os.path.join(os.getcwd(), result_file_name)))
-    print("Done")
+    try:
+        webbrowser.open("file://{}".format(os.path.join(os.getcwd(), result_file_name+'html')))
+    finally:
+        print("Done")
 # end table
 
+# Program entry point
 if __name__=="__main__":
     args = sys.argv[1:]
     working_dir = os.getcwd()

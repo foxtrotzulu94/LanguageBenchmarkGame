@@ -9,4 +9,5 @@
 */bin/*
 */build/*
 *-Results.*
+*-Results-interactive.*
 rust/target
