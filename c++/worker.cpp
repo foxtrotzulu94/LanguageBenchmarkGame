@@ -68,7 +68,7 @@ void Worker::populateSetWithKeys(std::unordered_set<std::string>& set, scan_resu
 }
 
 // Internal implementation of Scan Directory
-scan_result Worker::scanDirectoryInternal(std::string path){
+scan_result Worker::scanDirectoryInternal(std::string path) noexcept{
     // source: https://stackoverflow.com/questions/18233640/boostfilesystemrecursive-directory-iterator-with-filter
 
     // Paths comes in as "/a", so the cut index accounts for the leftmost separator removal with +1
@@ -127,7 +127,7 @@ std::shared_ptr<patch_result> Worker::createPatchData(
 }
 
 // Asynchronously run scanDirectory
-std::future<scan_result> Worker::scanDirectory(std::string path){
+std::future<scan_result> Worker::scanDirectory(std::string path) noexcept{
     return std::async(std::launch::async, &Worker::scanDirectoryInternal, this, path);
 }
 

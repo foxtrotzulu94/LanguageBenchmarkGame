@@ -53,7 +53,7 @@ private:
     std::shared_ptr<reconcile_result> lastReconcile;
 
     // Internal implementation of Scan Directory
-    scan_result scanDirectoryInternal(std::string path);
+    scan_result scanDirectoryInternal(std::string path) noexcept;
 
     // Hashes a given file
     std::string hashFile(std::string filepath);
@@ -74,7 +74,7 @@ public:
     Worker(std::string checksumName);
 
     // Asynchronously run scanDirectory
-    std::future<scan_result> scanDirectory(std::string path);
+    std::future<scan_result> scanDirectory(std::string path) noexcept;
 
     // Run the reconcile operation
     void Reconcile(scan_result& a, scan_result& b, bool keepResult);
