@@ -27,9 +27,7 @@ def setup():
 #end run
 
 def build():
-    import subprocess, platform
-    platform_string_map = {'Linux':'linux-x64', 'Darwin': 'osx-64', 'Windows': 'win-x64'}
-    build_platform = platform_string_map[platform.system()]
+    import subprocess
 
     subprocess.call(['dotnet', 'restore'])
     retcode = subprocess.call(['dotnet', 'build', '-c', 'Release', '-r', build_platform])
