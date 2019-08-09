@@ -11,7 +11,7 @@
 void PrintUsage(){
     using namespace std;
     cout << endl;
-    cout << "  Usage: program.out [options] <dir_a> <dir_b>" << endl << endl;
+    cout << "  Usage: program.out <dir_a> <dir_b> [options]" << endl << endl;
     cout << "  C++ implementation of the language benchmarking trial" << endl << endl;
     cout << "  Options:" << endl << endl;
     cout << "    -u, --ignore-unchanged\t Ignore unchanged files in the final output" << endl;
