@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+import os, platform
+platform_string_map = {'Linux':'linux-x64', 'Darwin': 'osx-64', 'Windows': 'win-x64'}
+build_platform = platform_string_map[platform.system()]
+output_file_name = os.path.join('bin','Release','netcoreapp2.1',build_platform, 'csharp')
+
 def setup():
     import os, subprocess, datetime
     if os.path.exists(os.path.join(os.getcwd(), "setup.log")):
@@ -22,21 +27,29 @@ def setup():
 #end run
 
 def build():
-    import subprocess
+    import subprocess, platform
+    platform_string_map = {'Linux':'linux-x64', 'Darwin': 'osx-64', 'Windows': 'win-x64'}
+    build_platform = platform_string_map[platform.system()]
+
     subprocess.call(['dotnet', 'restore'])
-    subprocess.call(['dotnet', 'build', '-c', 'Release'])
+    retcode = subprocess.call(['dotnet', 'build', '-c', 'Release', '-r', build_platform])
+
+    if retcode == 0 and os.path.exists(output_file_name):
+        print("Built C# implementation as '{}'".format(output_file_name))
+    else:
+        raise AssertionError("Build failed")
 #end run
 
 def run(cmd_args):
     import subprocess
-    process_args = ['dotnet', 'run', '-c', 'Release', '--no-build', '--no-restore', '--'] + cmd_args
+    process_args = ['./{}'.format(output_file_name)] + cmd_args
     retcode = subprocess.call(process_args)
     if retcode != 0:
         raise RuntimeError("Program run returned non-zero exit code")
 #end run
 
 if __name__=="__main__":
-    import sys, os
+    import sys
 
     setup()
     build()
