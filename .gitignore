@@ -12,3 +12,5 @@ Results
 *-Results.*
 *-Results-interactive.*
 rust/target
+*.class
+*.jar
