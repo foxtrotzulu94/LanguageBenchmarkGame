@@ -9,8 +9,9 @@ def build():
 #end run
 
 def run(cmd_args):
-    import subprocess, os
-    process_args = ["python3", os.path.join(os.getcwd(), "program.py")] + cmd_args
+    import subprocess, os, sys
+    python_executable = sys.executable
+    process_args = [python_executable, os.path.join(os.getcwd(), "program.py")] + cmd_args
     
     retcode = subprocess.call(process_args)
     if retcode != 0:

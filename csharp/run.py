@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
 import os, platform
+
+is_windows = os.name == 'nt'
 platform_string_map = {'Linux':'linux-x64', 'Darwin': 'osx-64', 'Windows': 'win-x64'}
 build_platform = platform_string_map[platform.system()]
+
 output_file_name = os.path.join('bin','Release','netcoreapp2.1',build_platform, 'csharp')
+if is_windows:
+    output_file_name += ".exe"
 
 def setup():
     import os, subprocess, datetime

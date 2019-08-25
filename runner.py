@@ -22,6 +22,7 @@ def help(args = None):
     print()
     print(" 'help' for this text")
     print(" 'init <language name>' to start implementing a new <language>")
+    print(" 'clean <language>' to reset environment and remove all any previous setups")
     print(" 'run <language> [space-separated arguments]' to run a given <language> implementation with a set of [arguments]")
     print(" 'verify <language> [space-separated arguments]' to check a given <language> against the reference")
     print(" 'benchmark <repetitions> <language> [space-separated arguments]' run an implementation and take an average time")
@@ -192,6 +193,24 @@ def __find_all_implementations():
     return [x for x in os.listdir('.') if os.path.isdir(x) and os.path.exists(os.path.join('.',x,'run.py'))]
 #end find all
 
+def clean(args):
+    working_dir = os.getcwd()
+    dir_names = args[0].split(',')
+    if len(dir_names) == 1 and dir_names[0] == 'all':
+        dir_names = __find_all_implementations()
+        print("Selected by wildcard: {}".format(dir_names))
+    
+    for a_dir in dir_names:
+        curr_dir = os.path.join(working_dir, a_dir)
+        
+        # TODO: delegate to runners?
+        setup_file = os.path.join(curr_dir, 'setup.log')
+        if os.path.exists(setup_file):
+            os.remove(setup_file)
+            print("Delete {} setup".format(a_dir))
+    #end for
+#end clean
+
 def compare(args, return_time_list = False, print_results = True):
     working_dir = os.getcwd()
     dir_names = args[0].split(',')
@@ -263,7 +282,7 @@ def __render_and_save(a_plot, data_dictionary):
     # Try opening it in a web browser
     try:
         print("Opening table in web browser...")
-        a_plot.render_in_browser()
+        #a_plot.render_in_browser()
     except Exception as e:
         print("Could not render in browser!")
         print(e)
@@ -459,7 +478,8 @@ def table(args):
 
     print("Opening table in web browser...")
     try:
-        webbrowser.open("file://{}".format(os.path.join(os.getcwd(), result_file_name+'html')))
+        #webbrowser.open("file://{}".format(os.path.join(os.getcwd(), result_file_name+'html')))
+        pass
     finally:
         print("Done")
 # end table
