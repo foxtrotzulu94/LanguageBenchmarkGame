@@ -5,13 +5,19 @@
 
 import sys, os, inspect
 
+# Python 3 ONLY!
+# Throw now before we go any further
+if sys.version_info.major < 3:
+    raise RuntimeError("This script must be run with Python 3 or higher!")
+
+
 def __get_results_directory():
     results_directory = "Results"
     if not os.path.exists(results_directory):
         os.mkdir(results_directory)
 
     return results_directory
-#end 
+#end
 
 def help(args = None):    
     __name__ = "__main__"
