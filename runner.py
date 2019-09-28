@@ -29,6 +29,7 @@ def help(args = None):
     print(" 'help' for this text")
     print(" 'init <language name>' to start implementing a new <language>")
     print(" 'clean <language>' to reset environment and remove all any previous setups")
+    print(" 'do_setup <language>' to provision the environment for that language")
     print(" 'run <language> [space-separated arguments]' to run a given <language> implementation with a set of [arguments]")
     print(" 'verify <language> [space-separated arguments]' to check a given <language> against the reference")
     print(" 'benchmark <repetitions> <language> [space-separated arguments]' run an implementation and take an average time")
@@ -205,15 +206,36 @@ def clean(args):
     if len(dir_names) == 1 and dir_names[0] == 'all':
         dir_names = __find_all_implementations()
         print("Selected by wildcard: {}".format(dir_names))
-    
+
     for a_dir in dir_names:
         curr_dir = os.path.join(working_dir, a_dir)
-        
+
         # TODO: delegate to runners?
         setup_file = os.path.join(curr_dir, 'setup.log')
         if os.path.exists(setup_file):
             os.remove(setup_file)
-            print("Delete {} setup".format(a_dir))
+            print("Deleted {} setup".format(a_dir))
+    #end for
+#end clean
+
+def do_setup(args):
+    working_dir = os.getcwd()
+    dir_names = args[0].split(',')
+    if len(dir_names) == 1 and dir_names[0] == 'all':
+        dir_names = __find_all_implementations()
+        print("Selected by wildcard: {}".format(dir_names))
+
+    for a_dir in dir_names:
+        module_name = a_dir+'.run'
+        setup = import_from(module_name, 'setup')
+        os.chdir(a_dir)
+        try:
+            setup()
+        except Exception as e:
+            print("Setup failed for {}!".format(module_name))
+            print(e)
+        finally:
+            os.chdir(working_dir)
     #end for
 #end clean
 
