@@ -1,0 +1,26 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'application'
+
+
+mainClassName = 'src.main.java.benchmark.Program'
+
+repositories {
+    jcenter()
+}
+
+//create a single Jar with all dependencies
+task fullBuild(type: Jar) {
+	manifest {
+        attributes 'Implementation-Title': 'Java Benchmark Language Game',
+        	'Implementation-Version': '1.0',
+        	'Main-Class': mainClassName
+    }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+}

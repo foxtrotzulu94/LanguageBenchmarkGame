@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-output_folder_name = './out'
-output_class_name = 'Program'
+output_name = './build/libs/java.jar'
 
 def setup():
     import os, datetime, subprocess
@@ -17,6 +16,7 @@ def setup():
             logFile.write("# => DO NOT DELETE THIS FILE OR SETUP WILL BE CALLED AGAIN\n")
             logFile.flush()
             subprocess.run(["javac", "--version"], stdout = logFile, stderr = logFile, check=True)
+            subprocess.run(["gradle", "-v"], stdout = logFile, stderr = logFile, check=True)
             subprocess.run(["java", "--version"], stdout = logFile, stderr = logFile, check=True)
             logFile.flush()
             logFile.write("\n# Setup completed on {}".format(datetime.datetime.now()))
@@ -29,17 +29,16 @@ def setup():
 
 def build():
     import os, subprocess
-    source_files = [x for x in os.listdir('.') if x.endswith('.java')]
-    retcode = subprocess.call(["javac", "-d", output_folder_name] + source_files)
+    retcode = subprocess.call(["gradle", "fullBuild"])
     if retcode != 0:
         raise AssertionError("Build failed")
 
-    print("Built Java implementation as out/Program.class")
+    print("Built Java implementation as {}".format(output_name))
 #end run
 
 def run(cmd_args):
     import subprocess
-    retcode = subprocess.call(["java", "-cp", output_folder_name, output_class_name] + cmd_args)
+    retcode = subprocess.call(["java", "-jar", output_name] + cmd_args)
     if retcode != 0:
         raise RuntimeError("Program run returned non-zero exit code")
 #end run

@@ -1,3 +1,5 @@
+package src.main.java.benchmark;
+
 class Program {
     public class Arguments
     {

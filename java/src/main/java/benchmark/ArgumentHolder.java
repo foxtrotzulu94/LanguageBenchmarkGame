@@ -1,7 +1,10 @@
+package src.main.java.benchmark;
+
 import java.util.HashSet;
 import java.nio.file.Path;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+
 
 class ArgumentHolder{
     public Path DirectoryA;
