@@ -23,4 +23,5 @@ task fullBuild(type: Jar) {
 
 dependencies {
     testCompile 'junit:junit:4.12'
+    compile 'info.picocli:picocli:4.0.4'
 }

@@ -1,23 +1,58 @@
 package src.main.java.benchmark;
 
-class Program {
-    public class Arguments
-    {
-        public String DirectoryA;
-        public String DirectoryB;
-        public Boolean IgnoreUnchanged;
-        public String HashName;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-        public Arguments(){}
+@Command(
+    name = "Java Implementation of the Benchmark Game", 
+    mixinStandardHelpOptions = true, 
+    version = "1.0",
+    description = "Prints the checksum (MD5 by default) of a file to STDOUT.")
+class Program implements Callable<Integer> {
+    
+    public ArgumentHolder args;
+    
+    @Parameters(index = "0", description = "The file whose checksum to calculate.")
+    private Path PathA;
+    
+    @Parameters(index = "1", description = "The file whose checksum to calculate.")
+    private Path PathB;
+    
+    @Option(names = {"-u", "--ignore-unchanged"}, description = "Ignore unchagned files in the final output")
+    private Boolean ignoreUnchanged = false;
+    
+    @ArgGroup(exclusive = true, multiplicity = "1")
+    Exclusive checksumAlgorithm;
+
+    static class Exclusive {
+        @Option(names = {"--MD5", "--md5"}, required = true) Boolean MD5;
+        @Option(names = {"--SHA1","--sha1"}, required = true) Boolean SHA1;
+        @Option(names = {"--SHA256", "--sha256"}, required = true) Boolean SHA256;
     }
 
-    public static void main(String[] args){
-        ArgumentHolder arg = new ArgumentHolder();
-        if(!arg.parse(args)){
-            System.out.println("Error parsing arguments!");
-            System.exit(1);
+    public static void main(String[] cmdArgs){
+        int exitCode = new CommandLine(new Program()).execute(cmdArgs);
+        System.exit(exitCode);
+    }
+    
+    @Override
+    public Integer call() throws Exception {
+        String algorithm = "MD5";
+        // check which algorithm was chosen
+        if (this.checksumAlgorithm.SHA1 != null) {
+            algorithm = "SHA-1";
         }
-
-        System.out.println(String.format("Starting diff of %s and %s (%s)", arg.DirectoryA, arg.DirectoryB, arg.ChecksumName));
+        else if (this.checksumAlgorithm.SHA256 != null) {
+            algorithm = "SHA-256";
+        }
+        
+        this.args = new ArgumentHolder(this.PathA, this.PathB, algorithm, this.ignoreUnchanged);
+        System.out.println(String.format("Starting diff of %s and %s (%s)", this.args.DirectoryA, this.args.DirectoryB, this.args.Checksum.getAlgorithm()));
+        return 0;
     }
 }
