@@ -1,6 +1,9 @@
-package src.main.java.benchmark;
+package benchmark;
 
 import java.nio.file.Path;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
@@ -14,7 +17,10 @@ import picocli.CommandLine.Parameters;
     version = "1.0",
     description = "Prints the checksum (MD5 by default) of a file to STDOUT.")
 class Program implements Callable<Integer> {
+    // Universal date time format
+    public static DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
     
+    // Program args
     public ArgumentHolder args;
     
     @Parameters(index = "0", description = "The file whose checksum to calculate.")
@@ -52,7 +58,16 @@ class Program implements Callable<Integer> {
         }
         
         this.args = new ArgumentHolder(this.PathA, this.PathB, algorithm, this.ignoreUnchanged);
-        System.out.println(String.format("Starting diff of %s and %s (%s)", this.args.DirectoryA, this.args.DirectoryB, this.args.Checksum.getAlgorithm()));
+        System.out.println(
+                String.format("Starting diff of %s and %s (%s)", 
+                        this.args.DirectoryA, 
+                        this.args.DirectoryB, 
+                        this.args.Checksum.getAlgorithm()));
+        System.out.println(
+                String.format("Starting at %s", dateFormat.format(new Date())));
+        
+        // TODO: call worker implementation
+        
         return 0;
     }
 }
