@@ -3,7 +3,7 @@ apply plugin: 'jacoco'
 apply plugin: 'application'
 
 
-mainClassName = 'src.main.java.benchmark.Program'
+mainClassName = 'benchmark.Program'
 
 repositories {
     jcenter()
@@ -25,4 +25,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'info.picocli:picocli:4.0.4'
     implementation 'org.apache.commons:commons-lang3:3.6'
+    // https://mvnrepository.com/artifact/commons-codec/commons-codec
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
 }

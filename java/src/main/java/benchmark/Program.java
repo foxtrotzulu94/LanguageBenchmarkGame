@@ -66,7 +66,15 @@ class Program implements Callable<Integer> {
         System.out.println(
                 String.format("Starting at %s", dateFormat.format(new Date())));
         
-        // TODO: call worker implementation
+        var worker = new Worker(this.args);
+        try{
+            worker.Run();
+        }
+        catch(Exception e){
+            System.out.println(e.getMessage());
+            //e.printStackTrace();
+            return 1;
+        }
         
         return 0;
     }

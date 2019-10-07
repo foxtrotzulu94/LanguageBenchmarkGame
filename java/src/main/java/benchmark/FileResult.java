@@ -8,10 +8,17 @@ import java.util.Objects;
  * Holds the results of scanning a directory
  */
 public class FileResult {  
-    public String filePath;
-    public String hashValue;
-    public long size;
-    public Date modifiedDate;
+    public final String filePath;
+    public final String hashValue;
+    public final long size;
+    public final Date modifiedDate;
+    
+    public FileResult(String path, String hash, long size, Date changed){
+        this.filePath = path;
+        this.hashValue = hash;
+        this.size = size;
+        this.modifiedDate = changed;
+    }
 
     @Override
     public boolean equals(Object obj)

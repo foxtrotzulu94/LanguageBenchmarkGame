@@ -29,6 +29,6 @@ public class Results {
         }
     }
     
-    public class ScanResult extends ConcurrentHashMap<String, FileResult> {}
-    public class PatchResult extends HashMap<Operation, ArrayList<FileResult>> {}
+    public static class ScanResult extends ConcurrentHashMap<String, FileResult> {}
+    public static class PatchResult extends HashMap<Operation, ArrayList<FileResult>> {}
 }

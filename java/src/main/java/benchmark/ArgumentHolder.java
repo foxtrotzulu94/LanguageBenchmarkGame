@@ -8,10 +8,10 @@ import java.security.NoSuchAlgorithmException;
 
 
 class ArgumentHolder{
-    public Path DirectoryA;
-    public Path DirectoryB;
-    public Boolean IgnoreUnchanged;
-    public MessageDigest Checksum;
+    public final Path DirectoryA;
+    public final Path DirectoryB;
+    public final Boolean IgnoreUnchanged;
+    public final MessageDigest Checksum;
 
     public ArgumentHolder(String dirA, String dirB, String checksum, Boolean ignoreUnchanged)
         throws NoSuchAlgorithmException{
