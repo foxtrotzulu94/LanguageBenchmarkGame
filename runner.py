@@ -246,7 +246,7 @@ def compare(args, return_time_list = False, print_results = True):
     if len(dir_names) == 1 and dir_names[0] == 'all':
         dir_names = __find_all_implementations()
         print("Selected by wildcard: {}".format(dir_names))
-        using_all_dirs = true
+        using_all_dirs = True
 
     repetitions = args[1]
     results = {}
