@@ -16,7 +16,7 @@ def select_checksum(args_dict):
 
 def scan_directory(dir_name, checksum):
     """Returns a dictionary of filename to checksum object"""
-    BUFFER_SIZE = 64 * 1024 # 4KB
+    BUFFER_SIZE = 64 * 1024 # 64KB
 
     ret_val = {}
     for root, _, files in os.walk(dir_name):
@@ -54,17 +54,17 @@ def reconcile(info_a, info_b):
 
     suspected_conflicts = paths_a & paths_b
     # paths_c = (paths_a | paths_b) - suspected_conflicts 
-    unchaged_paths = set([x for x in suspected_conflicts if info_a[x] == info_b[x]])
-    conflicts = suspected_conflicts - unchaged_paths
+    unchanged_paths = set([x for x in suspected_conflicts if info_a[x] == info_b[x]])
+    conflicts = suspected_conflicts - unchanged_paths
     
     patch_info_a = {}
     patch_info_a["ADD"] = [info_b[x] for x in (paths_b - paths_a)]
-    patch_info_a["UNCHANGED"] = [info_a[x] for x in unchaged_paths]
+    patch_info_a["UNCHANGED"] = [info_a[x] for x in unchanged_paths]
     patch_info_a["CONFLICT"] = [info_a[x] for x in conflicts]
     
     patch_info_b = {}
     patch_info_b["ADD"] = [info_a[x] for x in (paths_a - paths_b)]
-    patch_info_b["UNCHANGED"] = [info_b[x] for x in unchaged_paths]
+    patch_info_b["UNCHANGED"] = [info_b[x] for x in unchanged_paths]
     patch_info_b["CONFLICT"] = [info_b[x] for x in conflicts]
 
     return (patch_info_a,patch_info_b)
