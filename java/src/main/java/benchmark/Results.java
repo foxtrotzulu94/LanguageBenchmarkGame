@@ -31,4 +31,14 @@ public class Results {
     
     public static class ScanResult extends ConcurrentHashMap<String, FileResult> {}
     public static class PatchResult extends HashMap<Operation, ArrayList<FileResult>> {}
+    
+    public static class ReconcileResult{
+        public PatchResult a;
+        public PatchResult b;
+        
+        public ReconcileResult(PatchResult a, PatchResult b){
+            this.a = a;
+            this.b = b;
+        }
+    }
 }

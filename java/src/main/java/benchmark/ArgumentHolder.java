@@ -7,7 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 
-class ArgumentHolder{
+public class ArgumentHolder{
     public final Path DirectoryA;
     public final Path DirectoryB;
     public final Boolean IgnoreUnchanged;

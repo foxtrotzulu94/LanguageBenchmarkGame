@@ -36,9 +36,9 @@ class Program implements Callable<Integer> {
     Exclusive checksumAlgorithm;
 
     static class Exclusive {
-        @Option(names = {"--MD5", "--md5"}, required = true) Boolean MD5;
-        @Option(names = {"--SHA1","--sha1"}, required = true) Boolean SHA1;
-        @Option(names = {"--SHA256", "--sha256"}, required = true) Boolean SHA256;
+        @Option(names = {"--MD5", "--md5"}, required = false) Boolean MD5;
+        @Option(names = {"--SHA1","--sha1"}, required = false) Boolean SHA1;
+        @Option(names = {"--SHA256", "--sha256"}, required = false) Boolean SHA256;
     }
 
     public static void main(String[] cmdArgs){
@@ -75,6 +75,9 @@ class Program implements Callable<Integer> {
             //e.printStackTrace();
             return 1;
         }
+        
+        System.out.println(
+                String.format("Finished at %s", dateFormat.format(new Date())));
         
         return 0;
     }

@@ -51,7 +51,7 @@ public class FileResult {
     {
         String date = Program.dateFormat.format(this.modifiedDate);
         return String.format(
-                "%s (%s) | %d bytes)", 
+                "%s (%s | %d bytes)", 
                 filePath, date, this.size);
     }
 }
