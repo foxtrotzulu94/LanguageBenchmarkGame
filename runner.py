@@ -242,18 +242,32 @@ def do_setup(args):
 def compare(args, return_time_list = False, print_results = True):
     working_dir = os.getcwd()
     dir_names = args[0].split(',')
+    using_all_dirs = False
     if len(dir_names) == 1 and dir_names[0] == 'all':
         dir_names = __find_all_implementations()
         print("Selected by wildcard: {}".format(dir_names))
+        using_all_dirs = true
 
     repetitions = args[1]
     results = {}
+
+    # check all implementations exist before proceeding
+    if not using_all_dirs:
+        for implementation in dir_names:
+            if not os.path.exists(implementation):
+                import errno
+                print("\n '{}' is not a valid implementation. Check below for valid implementations!".format(implementation))
+                print("Languages: {}".format(__find_all_implementations()))
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), implementation)
 
     for implementation in dir_names:
         sub_args = [repetitions, implementation]
         sub_args.extend(args[2:])
         try:
             results[implementation] = benchmark(sub_args, return_times=return_time_list)
+        except ValueError as ve:
+            print("Check your arguments!")
+            raise ve
         except Exception as e:
             print(e)
             print()
