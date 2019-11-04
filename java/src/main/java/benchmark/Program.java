@@ -18,7 +18,7 @@ import picocli.CommandLine.Parameters;
     description = "Prints the checksum (MD5 by default) of a file to STDOUT.")
 class Program implements Callable<Integer> {
     // Universal date time format
-    public static DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+    public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     // Program args
     public ArgumentHolder args;
@@ -32,7 +32,7 @@ class Program implements Callable<Integer> {
     @Option(names = {"-u", "--ignore-unchanged"}, description = "Ignore unchagned files in the final output")
     private Boolean ignoreUnchanged = false;
     
-    @ArgGroup(exclusive = true, multiplicity = "1")
+    @ArgGroup(exclusive = true, multiplicity = "0..1")
     Exclusive checksumAlgorithm;
 
     static class Exclusive {
@@ -49,12 +49,14 @@ class Program implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         String algorithm = "MD5";
-        // check which algorithm was chosen
-        if (this.checksumAlgorithm.SHA1 != null) {
-            algorithm = "SHA-1";
-        }
-        else if (this.checksumAlgorithm.SHA256 != null) {
-            algorithm = "SHA-256";
+        if(this.checksumAlgorithm != null){
+            // check which algorithm was chosen
+            if (this.checksumAlgorithm.SHA1 != null) {
+                algorithm = "SHA-1";
+            }
+            else if (this.checksumAlgorithm.SHA256 != null) {
+                algorithm = "SHA-256";
+            }
         }
         
         this.args = new ArgumentHolder(this.PathA, this.PathB, algorithm, this.ignoreUnchanged);
