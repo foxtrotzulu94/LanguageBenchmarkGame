@@ -27,8 +27,8 @@ public class FileResult {
         {
             return false;
         }
-        
-        var other = (FileResult)obj;
+
+        FileResult other = (FileResult)obj;
         return this.filePath.equals(other.filePath)
             && this.hashValue.equals(other.hashValue)
             && this.size == other.size

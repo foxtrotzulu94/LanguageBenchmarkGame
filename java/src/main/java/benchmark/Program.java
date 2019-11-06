@@ -22,7 +22,7 @@ class Program implements Callable<Integer> {
     
     // Program args
     public ArgumentHolder args;
-    
+
     @Parameters(index = "0", description = "The file whose checksum to calculate.")
     private Path PathA;
     
@@ -68,7 +68,7 @@ class Program implements Callable<Integer> {
         System.out.println(
                 String.format("Starting at %s", dateFormat.format(new Date())));
         
-        var worker = new Worker(this.args);
+        Worker worker = new Worker(this.args);
         try{
             worker.Run();
         }

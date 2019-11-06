@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,39 +46,44 @@ public class Worker {
     
     public void Run() throws Exception{
         this.mainExecutor = Executors.newFixedThreadPool(requestedThreads);
-        var resultsA = this.ScanDirectory(workingArgs.DirectoryA);
-        var resultsB = this.ScanDirectory(workingArgs.DirectoryB);
-        
-        Reconcile(resultsA.get(), resultsB.get());
+        // Future<Results.ScanResult> resultsA = this.ScanDirectoryAsync(workingArgs.DirectoryA);
+        // Future<Results.ScanResult> resultsB = this.ScanDirectoryAsync(workingArgs.DirectoryB);
+
+        Results.ScanResult resultsA = this.ScanDirectory(workingArgs.DirectoryA);
+        Results.ScanResult resultsB = this.ScanDirectory(workingArgs.DirectoryB);
+
+        Reconcile(resultsA, resultsB);
         WriteResults();
-        
+
         // no tasks should be running anymore
         this.mainExecutor.shutdownNow();
     }
-    
-    private Future<Results.ScanResult> ScanDirectory(Path root) throws Exception {
-        // Java doesn't have nice async/await, so we have to rely on future for now
-        return this.mainExecutor.submit(() -> {
-            final int rootPathLength = root.toString().length();
-            var results = new Results.ScanResult();
-            Files.walk(root)
-                    .filter(Files::isRegularFile)
-                    .forEach(filePath -> {
-                        try {                            
-                            String canonicalPath = filePath
-                                    .toString()
-                                    .substring(
-                                            rootPathLength+1, 
-                                            filePath.toString().length());
-                            
-                            results.put(canonicalPath, ProcessFile(canonicalPath, filePath.toFile()));
-                        } catch (Exception ex) {
-                            Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-            });
-        
-            return results;
+
+    private Results.ScanResult ScanDirectory(Path root) throws Exception {
+        final int rootPathLength = root.toString().length();
+        Results.ScanResult results = new Results.ScanResult();
+        Files.walk(root)
+                .filter(Files::isRegularFile)
+                .forEach(filePath -> {
+                    try {
+                        String canonicalPath = filePath
+                                .toString()
+                                .substring(
+                                        rootPathLength+1,
+                                        filePath.toString().length());
+
+                        results.put(canonicalPath, ProcessFile(canonicalPath, filePath.toFile()));
+                    } catch (Exception ex) {
+                        Logger.getLogger(Worker.class.getName()).log(Level.SEVERE, null, ex);
+                    }
         });
+
+        return results;
+    }
+
+    private Future<Results.ScanResult> ScanDirectoryAsync(Path root) throws Exception {
+        // Java doesn't have nice async/await, so we have to rely on future for now
+        return this.mainExecutor.submit(() -> { return this.ScanDirectory(root); });
     }
     
     private FileResult ProcessFile(String pathKey, File file) throws Exception{
@@ -87,10 +93,10 @@ public class Worker {
         
         // Clone the object so we don't run into concurrent use issues
         MessageDigest digest = (MessageDigest) workingArgs.Checksum.clone();
-        var stream = new FileInputStream(file);
+        FileInputStream stream = new FileInputStream(file);
         
         while(true){
-            var bytesRead = stream.read(buffer);
+            int bytesRead = stream.read(buffer);
             if(bytesRead == -1)
                 break;
             
@@ -106,21 +112,21 @@ public class Worker {
     }
     
     private void Reconcile(Results.ScanResult a, Results.ScanResult b){
-        var pathsA = new HashSet<String>(Collections.list(a.keys()));
-        var pathsB = new HashSet<String>(Collections.list(b.keys()));
+        HashSet<String> pathsA = new HashSet<String>(Collections.list(a.keys()));
+        HashSet<String> pathsB = new HashSet<String>(Collections.list(b.keys()));
         
-        var suspectedConflicts = new HashSet<String>(Collections.list(a.keys()));
+        HashSet<String> suspectedConflicts = new HashSet<String>(Collections.list(a.keys()));
         // A Intersect B
         suspectedConflicts.retainAll(pathsB);
         
-        var unchangedFiles = suspectedConflicts.stream()
+        Set<String> unchangedFiles = suspectedConflicts.stream()
                 .filter(entry -> a.get(entry).equals(b.get(entry)))
                 .collect(Collectors.toSet());
-        
-        var conflicts = suspectedConflicts.stream()
+
+        Set<String> conflicts = suspectedConflicts.stream()
                 .filter(entry -> !unchangedFiles.contains(entry))
                 .collect(Collectors.toSet());
-        
+
         // Store the result of the reconciliation
         this.patches = new Results.ReconcileResult(
                 GeneratePatch(b,a, pathsB, pathsA, unchangedFiles, conflicts), 
@@ -132,7 +138,7 @@ public class Worker {
             Set<String> srcPaths, Set<String> targetPaths,
             Set<String> unchanged, Set<String> conflicts)
     {
-        var patch = new Results.PatchResult();
+        Results.PatchResult patch = new Results.PatchResult();
         
         // Additions
         patch.put(
@@ -166,8 +172,8 @@ public class Worker {
     }
     
     private void WriteResults() throws IOException{
-        var resultFile = new FileWriter(this.resultFilename);
-        var writer = new BufferedWriter(resultFile);
+        FileWriter resultFile = new FileWriter(this.resultFilename);
+        BufferedWriter writer = new BufferedWriter(resultFile);
         
         writer.write(String.format("# Results for %s\n", dateFormat.format(new Date())));
         writer.write(String.format("# Reconciled '%s' '%s'\n", workingArgs.DirectoryA.toString(), workingArgs.DirectoryB.toString()));
@@ -184,11 +190,11 @@ public class Worker {
         out.write(directory);
         out.write("\n");
         
-        var lines = new ArrayList<ImmutablePair<Results.Operation, FileResult>>();
-        
+        ArrayList<ImmutablePair<Results.Operation, FileResult>> lines = new ArrayList<ImmutablePair<Results.Operation, FileResult>>();
+
         // flatten the results
-        for(var action : patch.entrySet()){
-            var operation = action.getKey();
+        for(Entry<Results.Operation, ArrayList<FileResult>> action : patch.entrySet()){
+            Results.Operation operation = action.getKey();
             if(operation == Results.Operation.UNCHANGED && ignoreUnchanged){
                 continue;
             }
@@ -197,13 +203,13 @@ public class Worker {
                 lines.add(new ImmutablePair(operation, entry));
             });
         }
-        
+
         // Sort by filename
         lines.sort((a,b) -> {
             return a.right.filePath.compareTo(b.right.filePath);
         });
         
-        for(var line : lines){
+        for(ImmutablePair<Results.Operation, FileResult> line : lines){
             out.write(String.format("%s %s\n", line.left.toString(), line.right.toString()));
         }
     }
