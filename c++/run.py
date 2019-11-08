@@ -28,7 +28,7 @@ def setup():
 
 def build():
     import subprocess, os
-    
+
     # remove the previous build
     if os.path.exists(output_file_name):
         os.remove(output_file_name)
@@ -38,7 +38,7 @@ def build():
     c_defs = ['-DNDEBUG', '-DCRYPTOPP_CXX11', '-DCRYPTOPP_CXX11_NOEXCEPT']
 
     # For older versions of clang++/g++, the order of the source files matters!
-    process_args = ['clang++'] + source_files + ['-std=c++14',  '-Wall', '-pedantic',  '-Ofast', '-o', output_file_name] + c_libs + c_defs
+    process_args = [preferred_compiler] + source_files + ['-std=c++14',  '-Wall', '-pedantic',  '-Ofast', '-o', output_file_name] + c_libs + c_defs
     subprocess.call(process_args)
 
     if os.path.exists(output_file_name):

@@ -17,7 +17,7 @@ def setup():
             logFile.flush()
             subprocess.run(["javac", "-version"], stdout = logFile, stderr = logFile, check=True)
             subprocess.run(["gradle", "-v"], stdout = logFile, stderr = logFile, check=True)
-            subprocess.run(["java", "--version"], stdout = logFile, stderr = logFile, check=True)
+            subprocess.run(["java", "-version"], stdout = logFile, stderr = logFile, check=True)
             logFile.flush()
             logFile.write("\n# Setup completed on {}".format(datetime.datetime.now()))
         #end logFile
