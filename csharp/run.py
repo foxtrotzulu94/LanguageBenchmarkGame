@@ -3,8 +3,15 @@
 import os, platform
 
 is_windows = os.name == 'nt'
-platform_string_map = {'Linux':'linux-x64', 'Darwin': 'osx-64', 'Windows': 'win-x64'}
-build_platform = platform_string_map[platform.system()]
+
+build_platform_map = \
+    {
+    'Linux' : { 'x86_64': 'linux-x64', 'armv7l': 'linux-arm', 'aarch64': 'linux-arm64' },
+    'Darwin': { 'x86_64': 'osx-x64' },
+    'Windows': { 'x86_64': 'win-x64' }
+    }
+
+build_platform = build_platform_map[platform.system()][platform.machine()]
 
 output_file_name = os.path.join('bin','Release','netcoreapp2.1',build_platform, 'csharp')
 if is_windows:
