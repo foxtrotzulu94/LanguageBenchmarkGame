@@ -29,7 +29,8 @@ def setup():
 
 def build():
     import os, subprocess
-    retcode = subprocess.call(["gradle", "fullBuild"])
+    # Use gradle's '--no-daemon' option to avoid keeping a process up that can interfere with our tests.
+    retcode = subprocess.call(["gradle", "fullBuild", "--no-daemon"])
     if retcode != 0:
         raise AssertionError("Build failed")
 

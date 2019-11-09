@@ -3,6 +3,9 @@ name = "rust"
 version = "0.1.0"
 authors = ["Javier E. Fajardo <foxtrotzulu94@gmail.com>"]
 
+[profile.release]
+codegen-units = 1
+
 [dependencies]
 rayon = "1.0"
 rust-crypto = { git = "https://github.com/niluxv/rust-crypto", branch = "stable_0.2" }
