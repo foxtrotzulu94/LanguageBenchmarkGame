@@ -1,27 +1,33 @@
 #include "program.h"
 
 /* global arg_xxx structs */
-struct arg_lit *ignore, *help, *version, *md5, *sha, *sha256;
+struct arg_lit *ignore, *help, *version, *md5, *sha1, *sha256;
 struct arg_file *dir_a, *dir_b;
 struct arg_end *end;
 
-void print_time(char* fmt_string){
-    char* time = format_time();
+// Parsed args
+static struct arg_holder args;
+
+void print_time_now(char* fmt_string){
+    char* time = format_time_now();
     printf(fmt_string, time);
     free(time);
 }
 
-char* format_time(){
-    time_t rawtime;
-    struct tm * timeinfo;
+char* format_timespec(time_t time){
     int buffer_size = 80;
     char* buffer = calloc(buffer_size, sizeof(char*));
 
-    time (&rawtime);
-    timeinfo = localtime (&rawtime);
+    struct tm * timeinfo = localtime (&time);
 
     strftime(buffer, buffer_size, time_format, timeinfo);
     return buffer;
+}
+
+char* format_time_now(){
+    time_t rawtime;
+    time (&rawtime);
+    return format_timespec(rawtime);
 }
 
 int parse_args(int argc, char** argv, void *argtable[]){
@@ -49,20 +55,30 @@ int parse_args(int argc, char** argv, void *argtable[]){
         return 1;
     }
 
-    // Actually do the work now
-    printf("Starting diff of \"%s\" and \"%s\"\n", dir_a->filename[0], dir_b->filename[0]);
-    print_time("Start time %s\n");
+    // if a user specified more than one checksum, error out
+    if (md5->count + sha1->count + sha256->count > 1){
+        printf("More than one checksum function specified!\n");
+        printf("Try '%s --help' for more information.\n", progname);
+        return 1;
+    }
 
-    struct arg_holder args;
     args.dir_a = dir_a->filename[0];
     args.dir_b = dir_b->filename[0];
     args.ignoreUnchanged = ignore->count > 0;
-    strncpy(args.checksum, "MD5", sizeof(args.checksum));
 
-    // TODO: Do the work!
+    args.hash_implementation = MD5_checksum;
+    strncpy(args.hash_name, "MD5", sizeof(args.hash_name));
 
-    print_time("End time %s\n");
+    if(sha1->count > 0){
+        strncpy(args.hash_name, "SHA1", sizeof(args.hash_name));
+        args.hash_implementation = SHA1_checksum;
+    }
+    else if(sha256->count > 0){
+        strncpy(args.hash_name, "SHA256", sizeof(args.hash_name));
+        args.hash_implementation = SHA256_checksum;
+    }
 
+    // Everything was successful, start work
     return 0;
 }
 
@@ -72,12 +88,32 @@ int main(int argc, char** argv){
         dir_a    = arg_filen(NULL, NULL, "<dir_a>", 1, 1, "Directory to Parse"),
         dir_b    = arg_filen(NULL, NULL, "<dir_b>", 1, 1, "Directory to Parse"),
         ignore   = arg_litn("u", "ignore-unchanged", 0, 1, "Ignore unchanged files in the final output"),
+        md5      = arg_litn(NULL, "md5", 0, 1, "Use MD5 Hash"),
+        sha1     = arg_litn(NULL, "sha1", 0, 1, "Use SHA1 Hash"),
+        sha256   = arg_litn(NULL, "sha256", 0, 1, "Use SHA-256 Hash"),
         help    = arg_litn(NULL, "help", 0, 1, "Display this help and exit"),
         version = arg_litn(NULL, "version", 0, 1, "Version info"),
         end     = arg_end(2),
     };
 
     int exitcode = parse_args(argc, argv, argtable);
+
+    // If we had no issue parsing the arguments, let's do the work now
+    if(exitcode == 0){
+        printf("Starting diff of \"%s\" and \"%s\" (%s)\n", args.dir_a, args.dir_b, args.hash_name);
+        print_time_now("Start time %s\n");
+        // TODO: do work
+        // TODO: Do the work!
+        // khash_t(testy) *h;
+        // h = kh_init(testy);
+        // int ret;
+        // khint_t iter = kh_put(testy, h, "hi", &ret);
+        // kh_val(h, iter) = 10;
+        // kh_destroy(testy, h);
+        // TODO:
+
+        print_time_now("End time %s\n");
+    }
 
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
     return exitcode;

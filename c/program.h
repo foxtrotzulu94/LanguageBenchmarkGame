@@ -5,13 +5,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "argument_holder.h"
+#include "types.h"
+#include "implementation.h"
 #include "argtable/argtable3.h"
 
 static const char* time_format = "%F %H:%M:%S";
 
-char* format_time();
+char* format_timespec(time_t time);
+char* format_time_now();
 
-void print_time(char* fmt_string);
+void print_time_now(char* fmt_string);
 
 #endif
