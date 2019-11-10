@@ -18,6 +18,7 @@ def setup():
             logFile.write("# => DO NOT DELETE THIS FILE OR SETUP WILL BE CALLED AGAIN\n")
             logFile.flush()
             subprocess.run([preferred_compiler, "-v"], stdout = logFile, stderr = logFile, check=True)
+            subprocess.run(['git', 'submodule','update', '--init', '--', 'klib'], stdout = logFile, stderr = logFile, check=True)
             logFile.write("\n# Setup completed on {}".format(datetime.datetime.now()))
         #end logFile
     except Exception as e:
