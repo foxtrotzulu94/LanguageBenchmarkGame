@@ -18,3 +18,4 @@ rust/Cargo.lock
 c/argtable
 /java/Benchmark/.gradle/
 */.gradle/*
+nightly.sh
