@@ -4,6 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+
         {
             "name": "Runner (Compare All)",
             "type": "python",
@@ -11,6 +13,42 @@
             "program": "${workspaceRoot}/runner.py",
             "args": [
                 "compare", "all", "10", "/media/DMZ/Queue/Articles", "/media/DMZ-1/Queue/Articles"
+            ]
+        },
+        {
+            "name": "Runner (Verify Java)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/runner.py",
+            "args": [
+                "verify", "java", "/media/DMZ/Queue/Articles", "/media/DMZ-1/Queue/Articles"
+            ]
+        },
+        {
+            "name": "Runner (Plot)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/runner.py",
+            "args": [
+                "table", "c++,golang,csharp,typescript,python,python2", "1", "/media/DMZ/Queue/Articles", "/media/DMZ-1/Queue/Articles"
+            ]
+        },
+        {
+            "name": "Runner (Clean all)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/runner.py",
+            "args": [
+                "clean", "all"
+            ]
+        },
+        {
+            "name": "Runner (Setup all)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/runner.py",
+            "args": [
+                "do_setup", "all"
             ]
         },
     ]

@@ -8,7 +8,7 @@
 #include "argument_holder.h"
 #include "argtable/argtable3.h"
 
-const char* time_format = "%F %H:%M:%S";
+static const char* time_format = "%F %H:%M:%S";
 
 char* format_time();
 

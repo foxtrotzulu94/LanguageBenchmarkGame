@@ -15,3 +15,5 @@ rust/target
 *.class
 *.jar
 rust/Cargo.lock
+/java/Benchmark/.gradle/
+*/.gradle/*
