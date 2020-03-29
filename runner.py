@@ -75,7 +75,7 @@ def __run_game(dir, setup, build, run_implementation, sub_args, repetitions=1):
         start_time = time.perf_counter()
         run_implementation(sub_args)
         end_time = time.perf_counter()
-        times.append(round(end_time-start_time,3))
+        times.append(end_time - start_time)
     #end for
     print("========== Finishing Run ==========")
     os.chdir(working_dir)
@@ -83,7 +83,7 @@ def __run_game(dir, setup, build, run_implementation, sub_args, repetitions=1):
     if repetitions == 1:
         return times
 
-    average = sum(times) / repetitions
+    average = round(sum(times) / repetitions, 3)
     print("")
     print("{} repetitions - average run time: {} seconds".format(repetitions, average))
     print("")
@@ -193,11 +193,11 @@ def benchmark(args, return_times = False):
     if return_times:
         return times
 
-    return (sum(times) / reps)
+    return round( sum(times) / reps , 5)
 #end benchmark
 
 def __find_all_implementations():
-    return [ root
+    return [ root[2:]
              for root, dirs, files in os.walk('.')
              for name in files
              if name.endswith('run.py')]
