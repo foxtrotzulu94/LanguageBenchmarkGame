@@ -10,8 +10,8 @@ def build():
 
 def run(cmd_args):
     import subprocess, os
-    # The only change is that we run python2 instead of python3
-    process_args = ["python2", os.path.join(os.getcwd(), '..', 'python', "program.py")] + cmd_args
+    # The only change is that we run pypy instead of python3
+    process_args = ["pypy3", os.path.join(os.getcwd(), '..', "program.py")] + cmd_args
     
     retcode = subprocess.call(process_args)
     if retcode != 0:
