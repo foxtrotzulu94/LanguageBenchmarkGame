@@ -10,7 +10,6 @@ import sys, os, inspect
 if sys.version_info.major < 3:
     raise RuntimeError("This script must be run with Python 3 or higher!")
 
-
 def __get_results_directory():
     results_directory = "Results"
     if not os.path.exists(results_directory):
@@ -39,11 +38,58 @@ def help(args = None):
     print()
 # end help
 
-def import_from(module, name):
+def __import_from(module, name):
     # answer taken from https://stackoverflow.com/a/8790077
     module = __import__(module, fromlist=[name])
     return getattr(module, name)
-# end import_from
+# end __import_from
+
+def __game_runner_name(name):
+    # Technically, this means we support both '/' and '\' as valid separators
+    name = name.strip('/').strip('\\')
+    name = name.replace('/','.')
+    name = name.replace('\\','.')
+
+    return name + '.run'
+#end
+
+def __load_game(name):
+    module_name = __game_runner_name(name)
+    setup = __import_from(module_name, 'setup')
+    build = __import_from(module_name, 'build')
+    run_implementation = __import_from(module_name, 'run')
+    return setup, build, run_implementation
+#end
+
+def __run_game(dir, setup, build, run_implementation, sub_args, repetitions=1):
+    import time
+    working_dir = os.getcwd()
+    os.chdir(dir)
+
+    setup()
+    build()
+
+    print("========== Starting Run ==========")
+    times = []
+    for _ in range(repetitions):
+        start_time = time.perf_counter()
+        run_implementation(sub_args)
+        end_time = time.perf_counter()
+        times.append(round(end_time-start_time,3))
+    #end for
+    print("========== Finishing Run ==========")
+    os.chdir(working_dir)
+
+    if repetitions == 1:
+        return times
+
+    average = sum(times) / repetitions
+    print("")
+    print("{} repetitions - average run time: {} seconds".format(repetitions, average))
+    print("")
+
+    return times
+#end
 
 def init(args):
     dir_name = args[0]
@@ -87,34 +133,19 @@ if __name__=="__main__":
     print("Make sure to fill in the 'setup', 'build' and 'run' methods")
 #end init
 
-def run(args):
-    # save the previous working directory
-    working_dir = os.getcwd()
-    
+def run(args, reps=1):
     dir_name = args[0]
     if not os.path.exists(os.path.join(os.getcwd(), dir_name) ) :
         raise NameError("Could not find directory '{}'".format(dir_name))
 
     print("Running trial implemented in '{}'".format(args[0]))
-    
+
     sub_args = args[1:]
     print("Arguments: {}".format(sub_args))
     print("")
 
-    os.chdir(dir_name)
-
-    module_name = dir_name+'.run'
-    setup = import_from(module_name, 'setup')
-    build = import_from(module_name, 'build')
-    run_implementation = import_from(module_name, 'run')
-
-    setup()
-    build()
-    
-    run_implementation(sub_args)
-    
-    # restore working directory
-    os.chdir(working_dir)
+    setup, build, run_implementation = __load_game(dir_name)
+    return __run_game(dir_name, setup, build, run_implementation, sub_args, repetitions=reps)
 #end run
 
 def verify(args):
@@ -155,49 +186,21 @@ def verify(args):
 
 def benchmark(args, return_times = False):
     import time
-    
-    # save the current working dir
-    working_dir = os.getcwd()
 
-    repetitions = int(args[0])
-    dir_name = args[1]
-    sub_args = args[2:]
-    times = []
-
-    os.chdir(dir_name)
-
-    module_name = dir_name+'.run'
-    setup = import_from(module_name, 'setup')
-    build = import_from(module_name, 'build')
-    run_implementation = import_from(module_name, 'run')
-
-    setup()
-    build()
-    print("========== Starting Benchmark ==========")
-    for _ in range(repetitions):
-        start_time = time.perf_counter()
-        run_implementation(sub_args)
-        end_time = time.perf_counter()
-        times.append(round(end_time-start_time,3))
-    #end for
-    print("========== Finishing Benchmark ==========")
-
-    average = sum(times) / repetitions
-    print("")
-    print("{} repetitions - average run time: {} seconds".format(repetitions, average))
-    print("")
-    
-    # restore working dir
-    os.chdir(working_dir)
+    reps = int(args[0])
+    times = run(args[1:], reps)
 
     if return_times:
         return times
 
-    return average
+    return (sum(times) / reps)
 #end benchmark
 
 def __find_all_implementations():
-    return [x for x in os.listdir('.') if os.path.isdir(x) and os.path.exists(os.path.join('.',x,'run.py'))]
+    return [ root
+             for root, dirs, files in os.walk('.')
+             for name in files
+             if name.endswith('run.py')]
 #end find all
 
 def clean(args):
@@ -210,11 +213,12 @@ def clean(args):
     for a_dir in dir_names:
         curr_dir = os.path.join(working_dir, a_dir)
 
-        # TODO: delegate to runners?
         setup_file = os.path.join(curr_dir, 'setup.log')
         if os.path.exists(setup_file):
             os.remove(setup_file)
             print("Deleted {} setup".format(a_dir))
+        else:
+            print("Implementation '{}' did not have a setup.log file".format(a_dir))
     #end for
 #end clean
 
@@ -226,8 +230,8 @@ def do_setup(args):
         print("Selected by wildcard: {}".format(dir_names))
 
     for a_dir in dir_names:
-        module_name = a_dir+'.run'
-        setup = import_from(module_name, 'setup')
+        setup, _, __ = __load_game(a_dir)
+
         os.chdir(a_dir)
         try:
             setup()

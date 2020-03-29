@@ -1,13 +1,13 @@
 *.pyc
 *.patch
-*/node_modules/*
+*node_modules*
 *.log
 *.out
 */.vscode/.ropeproject/objectdb
 *.dll
-*/obj/*
+*obj*
 */bin/*
-*/build/*
+*build*
 Results
 *-Results.*
 *-Results-interactive.*
