@@ -34,7 +34,7 @@ def setup():
 
 def build():
     import subprocess
-    retcode = subprocess.call(['tsc', '-p', '../ts-node/', '--outDir',  output_dir])
+    retcode = subprocess.call(['tsc', '-p', './', '--outDir',  output_dir])
     if retcode != 0:
         raise AssertionError("Build failed")
     print("Successfully transpiled Typescript implementation")

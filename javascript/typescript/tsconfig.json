@@ -3,9 +3,9 @@
       "target": "es6",
       "module": "commonjs",
       "declaration": true,
-      "outDir": "../typescript/build",
+      "outDir": "build",
       "strict": true
     },
-    "include": ["../ts-node/."],
-    "exclude": ["node_modules", "**/__tests__/*"]
+    "include": ["fileresult.ts", "directory.ts", "program.ts", "argumentholder.ts"],
+    "exclude": ["node_modules", "**/__tests__/*", "build"]
   }

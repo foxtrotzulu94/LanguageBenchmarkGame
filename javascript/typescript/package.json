@@ -10,12 +10,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "typescript": "^2.5.3"
+    "typescript": "^2.5.3",
+    "@types/commander": "*",
+    "@types/pluralize": "0.0.27",
+    "@types/node": "12.12.2"
   },
   "dependencies": {
-    "@types/commander": "*",
-    "@types/node": "*",
-    "@types/pluralize": "0.0.27",
     "commander": "*",
     "tsc": "^1.20150623.0"
   }

@@ -1,5 +1,5 @@
 // program.ts
-import commander from 'commander'
+import * as commander from 'commander'
 import * as fs from 'fs'
 import * as util from 'util'
 import * as directory from './directory'
@@ -152,7 +152,7 @@ commander
     .version("0.0.1")
     .description("Typescript implementation of the language benchmarking trial")
     .arguments("<dir_a> <dir_b>")
-    .action(function (dir_a, dir_b){
+    .action(function (dir_a: string, dir_b: string){
         args.directoryA = dir_a;
         args.directoryB = dir_b;
     });
