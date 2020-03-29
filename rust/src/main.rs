@@ -152,7 +152,7 @@ fn reconcile(results_a: ScanDirectoryResult, results_b : ScanDirectoryResult) ->
 
 fn write_results(changes: ReconcileResult, args: ArgHolder){
     let out_file_name = "reference.patch";
-    fs::remove_file(out_file_name).unwrap();
+    fs::remove_file(out_file_name);
     let mut out_file = OpenOptions::new().write(true).create_new(true).open(out_file_name).unwrap();
 
     // All the write methods have an "unwrap" at the end to check the Result of the operation
