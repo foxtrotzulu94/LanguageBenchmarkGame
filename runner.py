@@ -80,10 +80,14 @@ def __run_game(dir, setup, build, run_implementation, sub_args, repetitions=1):
     print("========== Finishing Run ==========")
     os.chdir(working_dir)
 
+    round_digits = 3
     if repetitions == 1:
+        print("")
+        print("Run time: {} seconds".format(round(times[0], round_digits)))
+        print("")
         return times
 
-    average = round(sum(times) / repetitions, 3)
+    average = round(sum(times) / repetitions, round_digits)
     print("")
     print("{} repetitions - average run time: {} seconds".format(repetitions, average))
     print("")
